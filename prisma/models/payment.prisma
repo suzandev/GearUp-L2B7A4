@@ -2,14 +2,15 @@ model Payment {
   id            String      @id @default(uuid())
   rentalOrderId String      @unique
   customerId    String
-  transactionId String?
+  transactionId String?     @unique // 💡 Added @unique to prevent duplication conflicts
   amount        Float
-  method        String
-  provider      String
+  method        String      // "STRIPE"
+  provider      String      // "STRIPE"
   status        String      @default("PENDING")
   paidAt        DateTime?
   createdAt     DateTime    @default(now())
-  rentalOrder   RentalOrder @relation(fields: [rentalOrderId], references: [id])
+  
+  rentalOrder   RentalOrder @relation(fields: [rentalOrderId], references: [id], onDelete: Cascade)
   customer      User        @relation(fields: [customerId], references: [id])
 
   @@map("payments")

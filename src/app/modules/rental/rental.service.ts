@@ -18,12 +18,10 @@ const createRentalOrder = async (
     throw error;
   }
 
-  // Calculate rental duration in days
   const durationInDays = Math.ceil(
     (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
   );
 
-  // Run everything inside a transaction to prevent database desync
   return await prisma.$transaction(async (tx) => {
     let totalAmount = 0;
     const orderItemsData = [];
@@ -49,11 +47,9 @@ const createRentalOrder = async (
         throw error;
       }
 
-      // Calculate total item price
       const itemPrice = gear.pricePerDay * item.quantity * durationInDays;
       totalAmount += itemPrice;
 
-      // Update GearItem stock and availability
       const updatedStock = gear.stock - item.quantity;
       await tx.gearItem.update({
         where: { id: item.gearId },
@@ -66,11 +62,10 @@ const createRentalOrder = async (
       orderItemsData.push({
         gearId: item.gearId,
         quantity: item.quantity,
-        price: gear.pricePerDay, // Store snapshot of original daily price
+        price: gear.pricePerDay,
       });
     }
 
-    // Create the final RentalOrder with its nested Items
     const order = await tx.rentalOrder.create({
       data: {
         customerId,
@@ -101,7 +96,6 @@ const getUserOrders = async (userId: string, role: string) => {
   if (role === "CUSTOMER") {
     whereCondition.customerId = userId;
   } else if (role === "PROVIDER") {
-    // Look up orders where the gear belongs to this provider
     whereCondition.items = {
       some: {
         gear: { providerId: userId },
@@ -134,7 +128,6 @@ const getOrderDetails = async (id: string, userId: string, role: string) => {
     throw error;
   }
 
-  // Access Control: Customer must own it, Admin can view all, Provider can view if it's their gear
   if (role === "CUSTOMER" && order.customerId !== userId) {
     const error: any = new Error("Forbidden access");
     error.statusCode = 403;
