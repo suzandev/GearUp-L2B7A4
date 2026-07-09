@@ -1,26 +1,143 @@
+// import prisma from "../../config/prisma";
+
 import prisma from "../../config/prisma";
 
-const getAllGear = async () => {
-  const result = await prisma.gearItem.findMany({
-    orderBy: {
-      createdAt: "desc",
+// const getAllGear = async () => {
+//   const result = await prisma.gearItem.findMany({
+//     orderBy: {
+//       createdAt: "desc",
+//     },
+//   });
+
+//   return result;
+// };
+
+// const getSingleGear = async (id: string) => {
+//   const result = await prisma.gearItem.findUnique({
+//     where: {
+//       id,
+//     },
+//   });
+
+//   return result;
+// };
+
+// export const GearService = {
+//   getAllGear,
+//   getSingleGear,
+// };
+
+interface GearFilters {
+  category?: string;
+  brand?: string;
+  price?: string;
+  available?: string;
+}
+
+const createGear = async (gearData: {
+  name: string;
+  description?: string;
+  brand?: string;
+  pricePerDay: number;
+  stock?: number;
+  image?: string;
+  providerId: string;
+  categoryId: string;
+}) => {
+  const newGear = await prisma.gearItem.create({
+    data: {
+      name: gearData.name,
+      description: gearData.description,
+      brand: gearData.brand,
+      pricePerDay: gearData.pricePerDay,
+      stock: gearData.stock,
+      image: gearData.image,
+      providerId: gearData.providerId,
+      categoryId: gearData.categoryId,
+    },
+    include: {
+      category: true,
     },
   });
 
-  return result;
+  return newGear;
+};
+
+const getAllGear = async (filters: GearFilters) => {
+  const where: any = {};
+
+  if (filters.category) {
+    where.category = { slug: filters.category };
+  }
+
+  if (filters.brand) {
+    where.brand = { contains: filters.brand, mode: "insensitive" };
+  }
+
+  if (filters.available) {
+    where.available = filters.available === "true";
+  }
+
+  const gearItems = await prisma.gearItem.findMany({
+    where,
+    include: { category: true, reviews: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return gearItems.map((item) => ({
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    brand: item.brand,
+    pricePerDay: Number(item.pricePerDay),
+    stock: item.stock,
+    available: item.available,
+    image: item.image,
+    category: item.category,
+    reviews: item.reviews,
+  }));
 };
 
 const getSingleGear = async (id: string) => {
-  const result = await prisma.gearItem.findUnique({
-    where: {
-      id,
+  const item = await prisma.gearItem.findUnique({
+    where: { id },
+    include: {
+      category: true,
+      reviews: true,
+      provider: { select: { id: true, name: true, email: true } },
     },
   });
 
-  return result;
+  if (!item) {
+    const error: any = new Error("Gear item not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    brand: item.brand,
+    pricePerDay: Number(item.pricePerDay),
+    stock: item.stock,
+    available: item.available,
+    image: item.image,
+    category: item.category,
+    provider: item.provider,
+    reviews: item.reviews,
+  };
+};
+
+const getCategories = async () => {
+  return prisma.category.findMany({
+    orderBy: { name: "asc" },
+  });
 };
 
 export const GearService = {
   getAllGear,
   getSingleGear,
+  getCategories,
+  createGear,
 };

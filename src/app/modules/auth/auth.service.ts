@@ -4,14 +4,7 @@ import prisma from "../../config/prisma";
 
 const TOKEN_EXPIRES_IN: jwt.SignOptions["expiresIn"] = "7d";
 
-const register = async (input: {
-  name: string;
-  email: string;
-  password: string;
-  role: string;
-  phone?: string;
-  address?: string;
-}) => {
+const register = async (input: any) => {
   const existing = await prisma.user.findUnique({
     where: { email: input.email },
   });
@@ -35,22 +28,19 @@ const register = async (input: {
     },
   });
 
-  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, {
-    expiresIn: TOKEN_EXPIRES_IN,
-  });
+  const token = jwt.sign(
+    { id: user.id, role: user.role },
+    process.env.JWT_SECRET as string,
+    { expiresIn: TOKEN_EXPIRES_IN },
+  );
 
   return {
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
     token,
   };
 };
 
-const loginUser = async (input: { email: string; password: string }) => {
+const loginUser = async (input: any) => {
   const user = await prisma.user.findUnique({
     where: { email: input.email },
   });
@@ -62,7 +52,6 @@ const loginUser = async (input: { email: string; password: string }) => {
   }
 
   const isValid = await bcrypt.compare(input.password, user.password);
-
   if (!isValid) {
     const error: any = new Error("Invalid credentials");
     error.statusCode = 401;
@@ -75,17 +64,14 @@ const loginUser = async (input: { email: string; password: string }) => {
     throw error;
   }
 
-  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, {
-    expiresIn: TOKEN_EXPIRES_IN,
-  });
+  const token = jwt.sign(
+    { id: user.id, role: user.role },
+    process.env.JWT_SECRET as string,
+    { expiresIn: TOKEN_EXPIRES_IN },
+  );
 
   return {
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
     token,
   };
 };
@@ -110,15 +96,8 @@ const me = async (userId: string) => {
   };
 };
 
-const refreshToken = async (token: string) => {
-  return {
-    accessToken: "your_new_access_token",
-  };
-};
-
 export const authService = {
   register,
   loginUser,
   me,
-  refreshToken,
 };
