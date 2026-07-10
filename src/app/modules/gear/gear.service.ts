@@ -2,31 +2,6 @@
 
 import prisma from "../../config/prisma";
 
-// const getAllGear = async () => {
-//   const result = await prisma.gearItem.findMany({
-//     orderBy: {
-//       createdAt: "desc",
-//     },
-//   });
-
-//   return result;
-// };
-
-// const getSingleGear = async (id: string) => {
-//   const result = await prisma.gearItem.findUnique({
-//     where: {
-//       id,
-//     },
-//   });
-
-//   return result;
-// };
-
-// export const GearService = {
-//   getAllGear,
-//   getSingleGear,
-// };
-
 interface GearFilters {
   category?: string;
   brand?: string;
@@ -135,9 +110,38 @@ const getCategories = async () => {
   });
 };
 
+const updateGearListing = async (
+  id: string,
+  providerId: string,
+  payload: any,
+) => {
+  const gear = await prisma.gearItem.findFirst({ where: { id, providerId } });
+  if (!gear) {
+    const error: any = new Error("Gear item not found or unauthorized access");
+    error.statusCode = 404;
+    throw error;
+  }
+  return await prisma.gearItem.update({
+    where: { id },
+    data: payload,
+  });
+};
+
+const removeGearListing = async (id: string, providerId: string) => {
+  const gear = await prisma.gearItem.findFirst({ where: { id, providerId } });
+  if (!gear) {
+    const error: any = new Error("Gear item not found or unauthorized access");
+    error.statusCode = 404;
+    throw error;
+  }
+  return await prisma.gearItem.delete({ where: { id } });
+};
+
 export const GearService = {
   getAllGear,
   getSingleGear,
   getCategories,
   createGear,
+  updateGearListing,
+  removeGearListing,
 };

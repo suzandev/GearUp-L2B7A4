@@ -137,8 +137,42 @@ const getOrderDetails = async (id: string, userId: string, role: string) => {
   return order;
 };
 
+const updateRentalStatusByProvider = async (
+  id: string,
+  providerId: string,
+  status: any,
+) => {
+  const order = await prisma.rentalOrder.findUnique({
+    where: { id },
+    include: { items: { include: { gear: true } } },
+  });
+
+  if (!order) {
+    const error: any = new Error("Rental tracking ledger not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const ownsGear = order.items.some(
+    (item) => item.gear.providerId === providerId,
+  );
+  if (!ownsGear) {
+    const error: any = new Error(
+      "Unauthorized to modify status parameters on this order",
+    );
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return await prisma.rentalOrder.update({
+    where: { id },
+    data: { status },
+  });
+};
+
 export const RentalService = {
   createRentalOrder,
   getUserOrders,
   getOrderDetails,
+  updateRentalStatusByProvider,
 };
