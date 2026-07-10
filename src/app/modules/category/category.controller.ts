@@ -3,7 +3,6 @@ import { catchAsync } from "../../utils/catchAsync";
 import { CategoryService } from "./category.service";
 import { successResponse } from "../../utils/sendResponse";
 
-// ১. ক্যাটাগরি তৈরি করার কন্ট্রোলার
 const createCategory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const data = await CategoryService.createCategory(req.body);
@@ -12,7 +11,6 @@ const createCategory = catchAsync(
   },
 );
 
-// ২. সব ক্যাটাগরি দেখার কন্ট্রোলার
 const getAllCategories = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const data = await CategoryService.getAllCategories();

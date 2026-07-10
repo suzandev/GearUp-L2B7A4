@@ -14,7 +14,7 @@ router.post(
   authMiddleware,
   requireRoles("CUSTOMER"),
   validateRequest(ReviewValidation.createReviewValidationSchema),
-  ReviewController.createReview,
+  (req, res, next) => ReviewController.createReview(req, res, next),
 );
 
 export const ReviewRoutes = router;

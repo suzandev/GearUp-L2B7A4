@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import prisma from "../config/prisma";
 
 export const authMiddleware = async (
   req: Request,
@@ -36,26 +35,23 @@ export const authMiddleware = async (
     }
 
     const decoded = jwt.verify(token, jwtSecret) as jwt.JwtPayload & {
-      id?: string;
+      id: string;
+      role: string;
     };
-    if (!decoded.id) {
+
+    if (!decoded.id || !decoded.role) {
       return res.status(401).json({
         success: false,
-        message: "Invalid token payload",
+        message: "Invalid token payload structures",
         errorDetails: null,
       });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found",
-        errorDetails: null,
-      });
-    }
+    (req as any).user = {
+      id: decoded.id,
+      role: decoded.role,
+    };
 
-    (req as any).user = user;
     next();
   } catch (error) {
     return res.status(401).json({
@@ -69,10 +65,14 @@ export const authMiddleware = async (
 export const requireRoles = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
-    if (!user || !roles.includes(user.role)) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Forbidden", errorDetails: null });
+
+    if (!user || !roles.includes(user.role as string)) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Forbidden: You do not have permission to access this resource",
+        errorDetails: null,
+      });
     }
     next();
   };

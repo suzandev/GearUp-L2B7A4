@@ -8,7 +8,6 @@ export const validateRequest = (schema: ZodTypeAny) => {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      // Zod স্কিমা অনুযায়ী রিকোয়েস্টের বডি, কুয়েরি এবং প্যারামস ভ্যালিডেশন করা হচ্ছে
       await schema.parseAsync({
         body: req.body,
         query: req.query,
@@ -17,9 +16,8 @@ export const validateRequest = (schema: ZodTypeAny) => {
 
       next();
     } catch (error: any) {
-      // Zod এররগুলোকে প্রসেস করে ম্যান্ডেটরি রিকোয়ারমেন্ট অনুযায়ী স্ট্রাকচার্ড ফরম্যাটে নেওয়া
       const errorDetails = error.errors?.map((err: any) => ({
-        field: err.path[err.path.length - 1], // কোন ফিল্ডে এরর (যেমন: email, password)
+        field: err.path[err.path.length - 1],
         message: err.message,
       }));
 
